@@ -20,4 +20,8 @@ $router->group(['prefix' => 'api'], function() use ($router) {
         $router->get('list', 'ProductController@list');
         $router->get('search', 'ProductController@search');
     });
+
+    $router->group(['prefix' => 'stocks'], function() use ($router) {
+        $router->get('list', 'StockController@list');
+    });
 });
