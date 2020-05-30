@@ -22,7 +22,7 @@ class ProductTest extends TestCase
 
     public function testSearch()
     {
-        $products = factory(Product::class, 10000)->create();
+        $products = factory(Product::class, 100)->create();
 
         $productToSearch = $products->first();
 
