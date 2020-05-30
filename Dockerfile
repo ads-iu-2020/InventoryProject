@@ -5,8 +5,6 @@ RUN docker-php-ext-install pdo mbstring
 WORKDIR /app
 COPY . /app
 RUN composer install
-RUN php artisan migrate --force
-RUN php artisan db:seed
 
 CMD php -S 0.0.0.0:8181 -t public/
 EXPOSE 8181
