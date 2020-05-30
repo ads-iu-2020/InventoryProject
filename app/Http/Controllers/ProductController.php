@@ -23,9 +23,7 @@ class ProductController extends Controller
             'title' => 'required|string'
         ]);
 
-        $allProducts = Product::all();
-
-        $foundProducts = $allProducts->where('title', $request->input('title'))->values();
+        $foundProducts = Product::where('title', $request->input('title'))->get()->values();
         $foundProducts = $this->handleProductInfo($foundProducts);
 
         return response()->json($foundProducts);
