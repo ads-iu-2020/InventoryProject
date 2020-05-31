@@ -40,5 +40,20 @@ class StockController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function cancel(Request $request)
+    {
+        $this->validate($request, [
+            'product_id' => 'required|exists:products,id',
+            'amount' => 'required|integer|min:0'
+        ]);
+
+        /** @var Product $product */
+        $product = Product::find($request->input('product_id'));
+
+        $product->cancelStocks($request->input('amount'));
+
+        return response()->json(['success' => true]);
+    }
+
 
 }

@@ -111,4 +111,53 @@ class StockTest extends TestCase
                 ],
             ]);
     }
+
+    public function testCancel()
+    {
+        /** @var Product $product */
+        $product = factory(Product::class)->create();
+
+        $product->stockChanges()->create([
+            'value' => 100
+        ]);
+
+        $params = [
+            'product_id' => $product->id,
+            'amount' => 10
+        ];
+
+        $this
+            ->get('/api/stocks/cancel?' . http_build_query($params))
+            ->seeJson([
+                'success' => true
+            ]);
+
+        $this
+            ->get('/api/stocks/list')
+            ->seeJson([
+                [
+                    'product_id' => $product->id,
+                    'stocks' => 110
+                ]
+            ]);
+    }
+
+    public function testCancelNegative()
+    {
+        /** @var Product $product */
+        $product = factory(Product::class)->create();
+
+        $params = [
+            'product_id' => $product->id,
+            'amount' => -10
+        ];
+
+        $this
+            ->get('/api/stocks/cancel?' . http_build_query($params))
+            ->seeJson([
+                'amount' => [
+                    'The amount must be at least 0.'
+                ],
+            ]);
+    }
 }
