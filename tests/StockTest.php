@@ -198,7 +198,7 @@ class StockTest extends TestCase
         /** @var Product $product */
         $product = factory(Product::class)->create();
 
-        $period = CarbonPeriod::create(Carbon::today()->subMonth(), Carbon::today());
+        $period = CarbonPeriod::create(Carbon::today()->subWeeks(2), Carbon::today());
 
         foreach ($period as $day) {
             $dayStockChanges = factory(StockChangeRecord::class, 100)->make()->toArray();
