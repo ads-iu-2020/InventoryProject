@@ -130,4 +130,20 @@ class StockController extends Controller
         return response()->json($response);
     }
 
+    /**
+     * Return stocks changes for the last 6 hours.
+     */
+    public function changes()
+    {
+        $changes = StockChangeRecord::where('created_at', '>=', Carbon::now()->subHours(6))
+            ->get()
+            ->map(function (StockChangeRecord $record) {
+                $record->value = (int)$record->value;
+                $record->product_id = (int)$record->product_id;
+                return $record->only(['id', 'product_id', 'value', 'created_at']);
+            });
+
+        return response()->json($changes);
+    }
+
 }
