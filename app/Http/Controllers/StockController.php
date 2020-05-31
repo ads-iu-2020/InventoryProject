@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\StockChangeRecord;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
@@ -53,6 +54,27 @@ class StockController extends Controller
         $product->cancelStocks($request->input('amount'));
 
         return response()->json(['success' => true]);
+    }
+
+    public function history(Request $request)
+    {
+        $this->validate($request, [
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        /** @var Product $product */
+        $product = Product::find($request->input('product_id'));
+
+        $stocksHistory = $product->stockChanges()->get()
+            ->keyBy(function (StockChangeRecord $record) {
+                return $record->id;
+            })
+            ->map(function (StockChangeRecord $record) {
+                $record->value = (int)$record->value;
+                return $record->only(['value', 'created_at']);
+            });
+
+        return response()->json($stocksHistory);
     }
 
 
