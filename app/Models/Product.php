@@ -38,4 +38,11 @@ class Product extends Model
             'value' => -$amount
         ]);
     }
+
+    public function cancelStocks($amount)
+    {
+        $this->stockChanges()->create([
+            'value' => $amount
+        ]);
+    }
 }
