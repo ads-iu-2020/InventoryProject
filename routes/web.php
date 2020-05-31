@@ -26,5 +26,6 @@ $router->group(['prefix' => 'api'], function() use ($router) {
         $router->get('reserve', 'StockController@reserve');
         $router->get('cancel', 'StockController@cancel');
         $router->get('history', 'StockController@history');
+        $router->get('history/day', 'StockController@dayHistory');
     });
 });
