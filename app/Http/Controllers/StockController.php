@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\StockChangeRecord;
 use Carbon\Carbon;
-use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 
@@ -80,6 +79,12 @@ class StockController extends Controller
         return response()->json($stocksHistory);
     }
 
+    /**
+     * Return day by day stocks records for previous week.
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function dayHistory(Request $request)
     {
         $this->validate($request, [
@@ -87,20 +92,39 @@ class StockController extends Controller
         ]);
 
         /** @var Product $product */
-        $product = Product::find($request->input('product_id'));
+        $product = Product::find($request->input('product_id'))->load('stockChanges');
 
         $response = [];
 
-        $startAt = $product->stockChanges()->first()->created_at;
-        $period = CarbonPeriod::create($startAt, CarbonImmutable::today());
+        $startAt = Carbon::today()->subWeeks(2);
+        $period = CarbonPeriod::create($startAt, Carbon::today());
+
+        $initialStockAmount = $product->stockChanges
+            ->where('created_at', '<', $startAt)
+            ->sum('value');
 
         foreach ($period as $day) {
-            $dayStocks = $product
-                ->stockChanges()
-                ->where('created_at', '<=', $day->endOfDay()->toDateTimeString())
-                ->get();
+            if ($day->isSameDay($startAt)) {
+                $response[$day->format('Y-m-d')] = $initialStockAmount;
+            } else {
+                $response[$day->format('Y-m-d')] = 0;
+            }
+        }
 
-            $response[$day->format('Y-m-d')] = $dayStocks->sum('value');
+        $weekStockChanges = $product->stockChanges->where('created_at', '>=', $startAt);
+
+        foreach ($weekStockChanges as $stockChange) {
+            $response[$stockChange->created_at->format('Y-m-d')] += $stockChange->value;
+        }
+
+        $isFirstDay = true;
+
+        foreach ($period as $day) {
+            if (!$isFirstDay) {
+                $response[$day->format('Y-m-d')] += $response[$day->subDay()->format('Y-m-d')];
+            }
+
+            $isFirstDay = false;
         }
 
         return response()->json($response);
