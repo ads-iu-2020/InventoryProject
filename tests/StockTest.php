@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Product;
+use App\Models\StockChangeRecord;
+use Carbon\Carbon;
 use Laravel\Lumen\Testing\DatabaseMigrations;
 
 class StockTest extends TestCase
@@ -159,5 +161,34 @@ class StockTest extends TestCase
                     'The amount must be at least 0.'
                 ],
             ]);
+    }
+
+    public function testHistory()
+    {
+        /** @var Product $product */
+        $product = factory(Product::class)->create();
+
+        $stockChanges = factory(StockChangeRecord::class, 20)->make()->toArray();
+        $now = Carbon::now()->startOfMinute();
+        $expectedJson = [];
+
+        foreach ($stockChanges as $stockChange) {
+            $stockChangeModel = $product->stockChanges()->make($stockChange);
+            $stockChangeModel['created_at'] = $now;
+            $stockChangeModel->save(['timestamps' => false]);
+
+            $expectedJson[$stockChangeModel->id] = [
+                'value' => $stockChangeModel->value,
+                'created_at' => $now
+            ];
+        }
+
+        $params = [
+            'product_id' => $product->id
+        ];
+
+        $this
+            ->get('/api/stocks/history?' . http_build_query($params))
+            ->seeJson($expectedJson);
     }
 }
