@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\StockChangeRecord;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
@@ -77,5 +80,30 @@ class StockController extends Controller
         return response()->json($stocksHistory);
     }
 
+    public function dayHistory(Request $request)
+    {
+        $this->validate($request, [
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        /** @var Product $product */
+        $product = Product::find($request->input('product_id'));
+
+        $response = [];
+
+        $startAt = $product->stockChanges()->first()->created_at;
+        $period = CarbonPeriod::create($startAt, CarbonImmutable::today());
+
+        foreach ($period as $day) {
+            $dayStocks = $product
+                ->stockChanges()
+                ->where('created_at', '<=', $day->endOfDay()->toDateTimeString())
+                ->get();
+
+            $response[$day->format('Y-m-d')] = $dayStocks->sum('value');
+        }
+
+        return response()->json($response);
+    }
 
 }

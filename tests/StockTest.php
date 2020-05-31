@@ -3,6 +3,7 @@
 use App\Models\Product;
 use App\Models\StockChangeRecord;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Laravel\Lumen\Testing\DatabaseMigrations;
 
 class StockTest extends TestCase
@@ -190,5 +191,35 @@ class StockTest extends TestCase
         $this
             ->get('/api/stocks/history?' . http_build_query($params))
             ->seeJson($expectedJson);
+    }
+
+    public function testDayHistory()
+    {
+        /** @var Product $product */
+        $product = factory(Product::class)->create();
+
+        $period = CarbonPeriod::create(Carbon::today()->subMonth(), Carbon::today());
+
+        foreach ($period as $day) {
+            $dayStockChanges = factory(StockChangeRecord::class, 100)->make()->toArray();
+
+            $i = 0;
+
+            foreach ($dayStockChanges as $stockChange) {
+                $stockChangeModel = $product->stockChanges()->make($stockChange);
+                $stockChangeModel['created_at'] = $day->subHours($i);
+                $stockChangeModel->save(['timestamps' => false]);
+
+                $i++;
+            }
+        }
+
+        $params = [
+            'product_id' => $product->id
+        ];
+
+        $this
+            ->get('/api/stocks/history/day?' . http_build_query($params))
+            ->assertResponseOk();
     }
 }
