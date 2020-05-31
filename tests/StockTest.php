@@ -222,4 +222,21 @@ class StockTest extends TestCase
             ->get('/api/stocks/history/day?' . http_build_query($params))
             ->assertResponseOk();
     }
+
+    public function testChanges()
+    {
+        /** @var Product $product */
+        $product = factory(Product::class)->create();
+
+        $stockChanges = factory(StockChangeRecord::class, 20)->make()->toArray();
+        $product->stockChanges()->createMany($stockChanges);
+
+        $params = [
+            'product_id' => $product->id
+        ];
+
+        $this
+            ->get('/api/stocks/changes?' . http_build_query($params))
+            ->assertResponseOk();
+    }
 }
