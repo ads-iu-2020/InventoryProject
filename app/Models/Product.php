@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -15,7 +14,28 @@ class Product extends Model
         'price'
     ];
 
-    public function stockChanges() {
+    public function stockChanges()
+    {
         return $this->hasMany(StockChangeRecord::class);
+    }
+
+    public function getStocksLevel()
+    {
+        if ($this->relationLoaded('stockChanges')) {
+            return $this->stockChanges->sum('value');
+        }
+
+        return $this->stockChanges()->sum('value');
+    }
+
+    public function reserveStocks($amount)
+    {
+        if ($this->getStocksLevel() < $amount) {
+            throw new \UnexpectedValueException('Not enough stocks to reserve.');
+        }
+
+        $this->stockChanges()->create([
+            'value' => -$amount
+        ]);
     }
 }
